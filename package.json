@@ -2,7 +2,7 @@
   "name": "noizy-hub",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://github.com/jeffRnR/noizy-hub.git",
+  "homepage": "https://jeffRnR.github.io/noizy-hub",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
