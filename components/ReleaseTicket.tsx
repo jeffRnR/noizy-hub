@@ -3,7 +3,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
 import { useState } from "react";
-import { Circle, XCircle } from "lucide-react";
+import { Circle, TicketSlash, TicketX, XCircle } from "lucide-react";
 
 function ReleaseTicket({
   eventId,
@@ -33,11 +33,11 @@ function ReleaseTicket({
     <button
         onClick={handleRelease}
         disabled={isReleasing}
-        className="mt-2 w-full items-center justify-content gap-2 py-2 bg-red-100
-        text-red-700 rounded-md hover:ng-red-200 transition disabled:opacity-50
+        className="flex mt-2 w-full items-center justify-center gap-2 py-1 bg-red-100
+        text-red-700 rounded-md hover:bg-red-200 transition disabled:opacity-50
         disabled:cursor-not-allowed"
     >
-        <Circle className="w-4 h-4" />
+        <TicketX className="w-4 h-4" />
         {isReleasing ? "Releasing..." : "Release Ticket Offer"}
 
     </button>

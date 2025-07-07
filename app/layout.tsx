@@ -6,6 +6,7 @@ import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 import Header from "@/components/Header";
 import ButtonGradient from "@/components/ui/ButtonGradient";
 import SyncUserWithConvex from "@/components/SyncUserWithConvex";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +21,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Noizy Hub",
   description: "An e-ticketing platform",
+  icons: {
+    icon: "/icon.png"
+  }
 };
 
 export default function RootLayout({
@@ -38,6 +42,7 @@ export default function RootLayout({
             <Header/>
             <SyncUserWithConvex />
             {children}
+            <Toaster />
           </ClerkProvider>
         </ConvexClientProvider>
       </body>      

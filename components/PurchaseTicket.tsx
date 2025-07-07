@@ -58,13 +58,13 @@ function PurchaseTicket({ eventId }: { eventId: Id<"events"> }) {
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg border border-amber-200">
+    <div className="bg-white p-6 rounded-xl shadow-lg border border-[#7adb78]/50">
       <div className="space-y-4">
         <div className="bg-white rounded-md p-6 border border-gray-200">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                <Ticket className="w-6 h-6 text-amber-600" />
+              <div className="w-12 h-12 rounded-full bg-[#7adb78]/30 flex items-center justify-center">
+                <Ticket className="w-6 h-6 text-green-600" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -103,7 +103,7 @@ function PurchaseTicket({ eventId }: { eventId: Id<"events"> }) {
           {isLoading ? "Redireting to checkout..." : "Purchase Your Ticket Now"}
         </button> */}
 
-        <div className="mt-4">
+        <div className="mt-1">
           <ReleaseTicket eventId={eventId} waitingListId={queuePosition._id} />
         </div>
       </div>

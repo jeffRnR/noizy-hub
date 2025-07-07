@@ -80,13 +80,17 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
     }
 
     return (
-      <div className="flex items-center justify-between p-3
-      bg-[#553b6d]/10 rounded-lg border border-[#553b6d]/20">
+      <div
+        className="flex items-center justify-between p-3
+      bg-[#553b6d]/10 rounded-lg border border-[#553b6d]/20"
+      >
         <div className="flex items-center">
-          <LoaderCircle  className="w-4 h-4 mr-2 animate-spin text-[#553b6d]"/>
+          <LoaderCircle className="w-4 h-4 mr-2 animate-spin text-[#553b6d]" />
           <span className="text-[#553b6d]">Queue Position</span>
         </div>
-        <span className="bg-[#553b6d]/20 text-[#553b6d] px-3 py-1 rounded-full font-medium">#{queuePosition.position}</span>
+        <span className="bg-[#553b6d]/20 text-[#553b6d] px-3 py-1 rounded-full font-medium">
+          #{queuePosition.position}
+        </span>
       </div>
     );
   };
@@ -116,7 +120,7 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
       return (
         <div className="mt-4 flex items-center justify-between p-3 bg-[#7adb78]/30 rounded-md border border-[#7adb78]/60">
           <div className="flex items-center">
-            <Check className="w-5 h-5 text-green-700 mr-2" />
+            <Check className="w-4 h-4 text-green-700 mr-2" />
             <span className="text-green-700 font-medium">
               You have a ticket
             </span>
@@ -193,19 +197,20 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
               </span>
             )}
           </div>
-        </div>
-        {/* price tag */}
-        <div className="flex flex-col items-end gap-2 ml-4">
-          <span
-            className={`px-4 py-1.5 font-semibold rounded-md ${isPastEvent ? "bg-gray-50 text-gray-500" : "bg-[#7adb78]/30 text-green-700"}`}
-          >
-            KES {event.price.toFixed(2)}
-          </span>
-          {availability.purchasedCount >= availability.totalTickets && (
-            <span className="px-4 py-1.5 bg-red-50 text-red-700 font-semibold rounded-md text-sm">
-              Sold Out
+
+          {/* price tag */}
+          <div className="flex flex-col items-end gap-2 ml-4">
+            <span
+              className={`px-4 py-1.5 font-semibold rounded-md ${isPastEvent ? "bg-gray-50 text-gray-500" : "bg-[#7adb78]/30 text-green-700"}`}
+            >
+              KES {event.price.toFixed(2)}
             </span>
-          )}
+            {availability.purchasedCount >= availability.totalTickets && (
+              <span className="px-4 py-1.5 bg-red-50 text-red-700 font-semibold rounded-md text-sm">
+                Sold Out
+              </span>
+            )}
+          </div>
         </div>
         {/* event details */}
         <div className="mt-4 space-y-3">
@@ -229,7 +234,7 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
               {availability.totalTickets - availability.purchasedCount} /{" "}
               {availability.totalTickets} available
               {!isPastEvent && availability.activeOffers > 0 && (
-                <span className="text-amber-600 text-sm ml-2">
+                <span className="text-green-600 text-sm ml-2">
                   ({availability.activeOffers}{" "}
                   {availability.activeOffers === 1 ? "person" : "people"} trying
                   to buy)

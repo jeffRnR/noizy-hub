@@ -1,6 +1,7 @@
 import { mutation, internalMutation, query } from "./_generated/server";
-import { v } from "convex/values";
-import { WAITING_LIST_STATUS } from "./constants";
+import { convexToJson, v } from "convex/values";
+import { DURATIONS, TICKET_STATUS, WAITING_LIST_STATUS } from "./constants";
+import { internal } from "./_generated/api";
 
 export const getQueuePosition = query({
     args: {
@@ -29,27 +30,132 @@ export const getQueuePosition = query({
             .collect()
             .then((entries) => entries.length);
 
-        return{
+        return {
             ...entry,
             position: peopleAhead + 1,
         }
     }
 });
 
-export const releaseTicket = mutation({
-    args: {
-        eventId: v.id("events"),
-        waitingListId: v.id("waitingList"),
-    },
-    handler: async (ctx, {eventId, waitingListId}) => {
-        const entry = await ctx.db.get(waitingListId);
+// Extract the core queue processing logic into a shared function
+async function processQueueLogic(ctx: any, { eventId }: { eventId: any }) {
+    const event = await ctx.db.get(eventId);
+    if (!event) throw new Error("Event not found");
 
-        if (!entry || entry.status !== WAITING_LIST_STATUS.OFFERED) {
-            throw new Error("No valid ticket offer found");
+    // Calculate available spots
+    const { availableSpots } = await ctx.db
+      .query("events")
+      .filter((q: any) => q.eq(q.field("_id"), eventId))
+      .first()
+      .then(async (event: any) => {
+        if (!event) throw new Error("Event not found");
+
+        const purchasedCount = await ctx.db
+          .query("tickets")
+          .withIndex("by_event", (q: any) => q.eq("eventId", eventId))
+          .collect()
+          .then(
+            (tickets: any[]) =>
+              tickets.filter(
+                (t) =>
+                  t.status === TICKET_STATUS.VALID ||
+                  t.status === TICKET_STATUS.USED
+              ).length
+          );
+
+        const now = Date.now();
+        const activeOffers = await ctx.db
+          .query("waitingList")
+          .withIndex("by_event_status", (q: any) =>
+            q.eq("eventId", eventId).eq("status", WAITING_LIST_STATUS.OFFERED)
+          )
+          .collect()
+          .then(
+            (entries: any[]) =>
+              entries.filter((e) => (e.offerExpiresAt ?? 0) > now).length
+          );
+
+        return {
+          availableSpots: event.totalTickets - (purchasedCount + activeOffers),
+        };
+      });
+
+    if (availableSpots <= 0) return;
+
+    // Get next users in line
+    const waitingUsers = await ctx.db
+      .query("waitingList")
+      .withIndex("by_event_status", (q: any) =>
+        q.eq("eventId", eventId).eq("status", WAITING_LIST_STATUS.WAITING)
+      )
+      .order("asc")
+      .take(availableSpots);
+
+    // Create time-limited offers for selected users
+    const now = Date.now();
+    for (const user of waitingUsers) {
+      // Update the waiting list entry to OFFERED status
+      await ctx.db.patch(user._id, {
+        status: WAITING_LIST_STATUS.OFFERED,
+        offerExpiresAt: now + DURATIONS.TICKET_OFFER,
+      });
+
+      // Schedule expiration job for this offer
+      await ctx.scheduler.runAfter(
+        DURATIONS.TICKET_OFFER,
+        internal.waitingList.expireOffer,
+        {
+          waitingListId: user._id,
+          eventId,
         }
+      );
+    }
+}
 
-        await ctx.db.patch(waitingListId, {
-            status: WAITING_LIST_STATUS.EXPIRED,
-        });
-    },
+export const processQueue = mutation({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, { eventId }) => {
+    await processQueueLogic(ctx, { eventId });
+  },
+});
+
+export const expireOffer = internalMutation({
+  args: {
+    waitingListId: v.id("waitingList"),
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, { waitingListId, eventId }) => {
+    const offer = await ctx.db.get(waitingListId);
+    if (!offer || offer.status !== WAITING_LIST_STATUS.OFFERED) return;
+
+    await ctx.db.patch(waitingListId, {
+      status: WAITING_LIST_STATUS.EXPIRED,
+    });
+
+    // Use the shared logic instead of calling the mutation directly
+    await processQueueLogic(ctx, { eventId });
+  },
+});
+
+export const releaseTicket = mutation({
+  args: {
+    eventId: v.id("events"),
+    waitingListId: v.id("waitingList"),
+  },
+  handler: async (ctx, { eventId, waitingListId }) => {
+    const entry = await ctx.db.get(waitingListId);
+    if (!entry || entry.status !== WAITING_LIST_STATUS.OFFERED) {
+      throw new Error("No valid ticket offer found");
+    }
+
+    // Mark the entry as expired
+    await ctx.db.patch(waitingListId, {
+      status: WAITING_LIST_STATUS.EXPIRED,
+    });
+
+    // Use the shared logic instead of calling the mutation directly
+    await processQueueLogic(ctx, { eventId });
+  },
 });
