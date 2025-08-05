@@ -127,7 +127,7 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
           </div>
           <button
             onClick={() => router.push(`/tickets/${userTicket._id}`)}
-            className="text-sm bg-[#7adb78] hover:bg-[#7adb78] text-white px-3 py-1.5"
+            className="text-sm bg-[#7adb78] hover:bg-[#7adb78] text-gray-200 px-3 py-1.5"
           >
             View your ticket
           </button>
@@ -158,7 +158,7 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
   return (
     <div
       onClick={() => router.push(`/event/${eventId}`)}
-      className={`bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 cursor-pointer overflow-hidden relative ${isPastEvent ? "opacity-75 hover:opacity-100" : ""}`}
+      className={`bg-white hover:bg-[#553b6d]/5 border hover:border-none border-gray-300/30 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300  cursor-pointer overflow-hidden relative ${isPastEvent ? "opacity-75 hover:opacity-100" : ""}`}
     >
       {/* event Image */}
       {imageUrl && (
@@ -184,7 +184,7 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
           <div>
             <div className="flex flex-col items-start gap-2">
               {isEventOwner && (
-                <span className="inline-flex items-center gap-1 bg-[#553b6d] text-white px-2 py-1 rounded-md text-xs font-medium">
+                <span className="inline-flex items-center gap-1 bg-[#553b6d] text-gray-200 px-2 py-1 rounded-md text-xs font-medium">
                   <StarIcon className="w-3 h-3" />
                   Your Event
                 </span>
@@ -200,11 +200,11 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
 
           {/* price tag */}
           <div className="flex flex-col items-end gap-2 ml-4">
-            <span
+            {/* <span
               className={`px-4 py-1.5 font-semibold rounded-md ${isPastEvent ? "bg-gray-50 text-gray-500" : "bg-[#7adb78]/30 text-green-700"}`}
             >
               KES {event.price.toFixed(2)}
-            </span>
+            </span> */}
             {availability.purchasedCount >= availability.totalTickets && (
               <span className="px-4 py-1.5 bg-red-50 text-red-700 font-semibold rounded-md text-sm">
                 Sold Out
@@ -228,20 +228,24 @@ function EventCard({ eventId }: { eventId: Id<"events"> }) {
           </div>
 
           {/* number of tickets available */}
-          <div className="flex items-center text-gray-600">
-            <Ticket className="w-4 h-4 mr-2" />
-            <span>
-              {availability.totalTickets - availability.purchasedCount} /{" "}
-              {availability.totalTickets} available
-              {!isPastEvent && availability.activeOffers > 0 && (
-                <span className="text-green-600 text-sm ml-2">
-                  ({availability.activeOffers}{" "}
-                  {availability.activeOffers === 1 ? "person" : "people"} trying
-                  to buy)
-                </span>
-              )}
-            </span>
-          </div>
+          {isEventOwner ? (
+            <div className="flex items-center text-gray-600">
+              <Ticket className="w-4 h-4 mr-2" />
+              <span>
+                {availability.totalTickets - availability.purchasedCount} /{" "}
+                {availability.totalTickets} available
+                {!isPastEvent && availability.activeOffers > 0 && (
+                  <span className="text-green-600 text-sm ml-2">
+                    ({availability.activeOffers}{" "}
+                    {availability.activeOffers === 1 ? "person" : "people"}{" "}
+                    trying to buy)
+                  </span>
+                )}
+              </span>
+            </div>
+          ) : (
+            ""
+          )}
         </div>
         <p className="mt-4 text-gray-600 text-sm line-clamp-2">
           {event.description}

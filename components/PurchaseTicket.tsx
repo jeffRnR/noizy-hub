@@ -95,7 +95,7 @@ function PurchaseTicket({ eventId }: { eventId: Id<"events"> }) {
           onClick={handlePurchase}
           disabled={isExpired || isLoading}
           className="w-full bg-gradient-to-r from-amber-500 to-amber-600
-          text-white px-8 py-4 rounded-md font-bold shadow-md hover:from-amber-600
+          text-gray-200 px-8 py-4 rounded-md font-bold shadow-md hover:from-amber-600
           hover:to-amber-700 transform hover:scale[1.02] transition-all
           duration-200 disabled:from-gray-400 disabled:to-gray-500
           disabled:cursor-not-allowd disabled:scale-100 text-lg"

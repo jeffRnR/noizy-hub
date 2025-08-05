@@ -1,141 +1,161 @@
 "use client";
 
-import Spinner from "@/components/Spinner";
+import { useUser } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useStorageUrl } from "@/lib/utils";
-import { SignInButton, useUser } from "@clerk/clerk-react";
-import { useQuery } from "convex/react";
-import { useParams } from "next/navigation";
-import Image from "next/image";
-import { CalendarDays, MapPin, Ticket, Users } from "lucide-react";
-import EventCard from "@/components/EventCard";
-import Button from "@/components/Button";
+import Spinner from "@/components/Spinner";
+import DirectPurchase from "@/components/DirectPurchase";
 import JoinQueue from "@/components/JoinQueue";
+import { CalendarDays, MapPin, User, Clock } from "lucide-react";
 
-function EventPage() {
+interface EventPageProps {
+  params: {
+    id: string;
+  };
+}
+
+function EventPage({ params }: EventPageProps) {
   const { user } = useUser();
-  const params = useParams();
+  
+  // Validate and convert the ID
+  const eventId = params.id as Id<"events">;
+  
+  // Validate that we have a proper eventId before making queries
+  if (!eventId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Event</h1>
+          <p className="text-gray-600">The event ID provided is not valid.</p>
+        </div>
+      </div>
+    );
+  }
 
-  const event = useQuery(api.events.getById, {
-    eventId: params.id as Id<"events">,
-  });
+  const event = useQuery(api.events.getById, { eventId });
+  const availability = useQuery(api.events.getEventAvailability, { eventId });
 
-  const availability = useQuery(api.events.getEventAvailability, {
-    eventId: params.id as Id<"events">,
-  });
-
-  const imageUrl = useStorageUrl(event?.imageStorageId);
-
-  if (!event || !availability) {
+  // Handle loading state
+  if (event === undefined || availability === undefined) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner />
       </div>
     );
   }
+
+  // Handle event not found
+  if (event === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Event Not Found</h1>
+          <p className="text-gray-600">The event you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isEventOwner = user?.id === event.userId;
+  const isPastEvent = event.eventDate < Date.now();
+  const eventDate = new Date(event.eventDate);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* event details  */}
-      <div className="max-w-7xl max-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-md shadow-sm overflow-hidden">
-          {/* event image */}
-          {imageUrl && (
-            <div className="aspect-[21/9] relative w-full">
-              <Image
-                src={imageUrl}
-                alt={event.name}
-                fill
-                className="object-cover"
-                priority
-              />
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Event Header */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
+          {event.imageStorageId && (
+            <div className="w-full h-64 bg-gray-200">
+              {/* Add your image component here */}
+              <div className="w-full h-full flex items-center justify-center text-gray-500">
+                Event Image
+              </div>
             </div>
           )}
-
-          {/* event details in depth */}
-          <div className="p-8">
-            <div className="grid grid-cols lg:grid-cols-2 gap-12">
-              {/* left column- event details */}
-              <div className="space-y-8">
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-5">
-                    {event.name}
-                  </h1>
-                  <p className="text-lg text-gray-600">{event.description}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-gray-50 p-4 rounded-md border border-gray-100">
-                    <div className="flex items-center text-gray-600 mb-1">
-                      <CalendarDays className="w-4 h-4 mr-2 text-[#7adb78]" />
-                      <span className="text-sm font-medium">Date</span>
-                    </div>
-                    <p className="text-gray-900">
-                      {new Date(event.eventDate).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-md border border-gray-100">
-                    <div className="flex items-center text-gray-600 mb-1">
-                      <MapPin className="w-5 h-5 mr-2 text-[#7adb78]" />
-                      <span className="text-sm forn medium">Location</span>
-                    </div>
-                    <p className="text-gray-900">{event.location}</p>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-md border border-gray-100">
-                    <div className="flex items-center text-gray-600 mb-1">
-                      <Ticket className="w-5 h-5 mr-2 text-[#7adb78]" />
-                      <span className="text-sm forn medium">Price</span>
-                    </div>
-                    <p className="text-gray-900">
-                      KES {event.price.toFixed(2)}
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-50 p-4 rounded-md border border-gray-100">
-                    <div className="flex items-center text-gray-600 mb-1">
-                      <Users className="w-5 h-5 mr-2 text-[#7adb78]" />
-                      <span className="text-sm forn medium">Availability</span>
-                    </div>
-                    <p className="text-gray-900">
-                      {availability.totalTickets - availability.purchasedCount}{" "}
-                      / {availability.totalTickets} left
-                    </p>
-                  </div>
-                </div>
-
-                {/* additional event information */}
-                {/* <div className="bg-[#553b6d]/10 border border[#553b6d]/20 rounded-md p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Event Information</h3>
-                    <ul className="space-y-2 text-[#553b6d]">
-                        <li>* Tickets are non-refundable</li>
-                        <li>* No food or drinks from outside</li>
-                        <li>* Age restriction: 21+</li>
-                    </ul>
-                </div> */}
+          
+          <div className="p-6">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{event.name}</h1>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="flex items-center gap-2 text-gray-600">
+                <CalendarDays className="w-5 h-5" />
+                <span>{eventDate.toLocaleDateString()}</span>
               </div>
-
-              {/* right column - ticket purchase card */}
-              <div>
-                <div className="sticky top-8 space-y-4">
-                    <EventCard  eventId={params.id as Id<"events">} />
-
-                    {user ? (
-                        <JoinQueue 
-                            eventId={params.id as Id<"events">}
-                            userId={user.id}
-                        />
-                    ) : (
-                        <SignInButton>
-                            <Button className="w-full">
-                                Sign in to buy tickets
-                            </Button>
-                        </SignInButton>
-                    )}
-                </div>
+              
+              <div className="flex items-center gap-2 text-gray-600">
+                <Clock className="w-5 h-5" />
+                <span>{eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-gray-600">
+                <MapPin className="w-5 h-5" />
+                <span>{event.location}</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-gray-600">
+                <User className="w-5 h-5" />
+                <span>Organized by {isEventOwner ? 'You' : 'Event Organizer'}</span>
               </div>
             </div>
+            
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">About this event</h2>
+              <p className="text-gray-700 leading-relaxed">{event.description}</p>
+            </div>
+
+            {/* Event Status */}
+            {event.is_cancelled && (
+              <div className="bg-red-100 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-800 font-medium">This event has been cancelled.</p>
+              </div>
+            )}
+
+            {isPastEvent && !event.is_cancelled && (
+              <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6">
+                <p className="text-gray-800 font-medium">This event has already taken place.</p>
+              </div>
+            )}
+
+            {/* Ticket Availability */}
+            {availability && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">Ticket Availability</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700">Available: </span>
+                    <span className="font-medium">{availability.totalTickets - availability.purchasedCount}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Sold: </span>
+                    <span className="font-medium">{availability.purchasedCount}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Purchase/Queue Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Get Your Ticket</h2>
+          
+          {!event.is_cancelled && !isPastEvent && (
+            <div className="space-y-6">
+              <DirectPurchase eventId={eventId} userId={user?.id || null} />
+              
+              <div className="border-t pt-6">
+                <JoinQueue eventId={eventId} userId={user?.id || null} />
+              </div>
+            </div>
+          )}
+          
+          {(event.is_cancelled || isPastEvent) && (
+            <div className="text-center py-8 text-gray-500">
+              <p>Ticket purchases are not available for this event.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
